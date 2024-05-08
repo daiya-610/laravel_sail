@@ -319,19 +319,139 @@ sail composer require askdkc/breezejp --dev
 sail artisan breezejp
 ```
 
-3\. 
+## sec04 記事投稿フォーム作成
+- 『件名』『本文』にテキストエリアがあり、フォームの下に『送信する』ボタンがあるフォームを作成する。
+
+1\. モデルとマイグレーションファイルの作成
 ```
+sail artisan make:model Post -m
+```
+- database/migrations 配下と app/Modelsにファイルが作成される。
+
+2\. database/migrations 配下に作成されたマイグレーションファイルに、postsテーブルを作成するためのtitleカラムとbodyカラムを設定する
+- ./database/migrations/(年)_(月)_(日)_(時刻)_create_posts_table.php
+```php:database/migrations/2024_05_08_232219_create_posts_table.php
+public function up(): void
+    {
+        Schema::create('posts', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->text('body');
+            $table->timestamps();
+        });
+    }
 ```
 
-4\. 
-4-1\. 
+- マイグレート実行し、データベースにpostsテーブルを作成
 ```
-```
-
-4-2\. 
-```
+sail artisan migrate
 ```
 
-5\. 確認
+3\. ビューファイルの作成
+- resources/viewsの中にpostフォルダを作り、その中に create.blade.phpファイルを作る
+
 ```
+mkdir resources/views/post
+touch resources/views/post/create.blade.php
 ```
+
+- create.blade.phpファイルを編集する
+```
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            フォーム
+        </h2>
+    </x-slot>
+ 
+    <div class="max-w-7xl mx-auto px-6">
+        <form method="post" action="{{ route('post.store') }}">
+        @csrf
+            <div class="mt-8">    
+                <div class="w-full flex flex-col">
+                    <label for="title" class="font-semibold mt-4">件名</label>
+                    <input type="text" name="title" class="w-auto py-2 border border-gray-300 rounded-md" id="title">
+                </div>
+            </div>
+        
+            <div class="w-full flex flex-col">
+                <label for="body" class="font-semibold mt-4">本文</label> 
+                <textarea name="body" class="w-auto py-2 border border-gray-300 rounded-md" id="body" cols="30" rows="5">
+                </textarea>
+            </div>
+        
+            <x-primary-button class="mt-4">
+                送信する
+            </x-primary-button>
+        </form>
+    </div>
+</x-app-layout>
+```
+
+3\. ビューファイル表示用コードの追加
+- PostControllerを作成する
+```
+sail artisan make:controller PostController
+```
+
+4\. PostControllerファイルを編集する
+```php:app/Http/Controllers/PostController.php
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Post;
+
+class PostController extends Controller
+{
+    public function create(){
+        return view('post.create');
+    }
+
+    public function store(Request $request) {
+        $post = Post::create([
+            'title' => $request->title,
+            'body' => $request->bosy
+        ]);
+        return back();
+    }
+}
+```
+
+5\. ルーティングの設定(ビューファイル表示用のルート設定)
+- routes/web.phpの中に、下記のuse宣言とフォーム表示用のルート設定と投稿データ保存用のルート設定を追加する。
+```php:routes/api.php
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PostController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+Route::get('post/create', [PostController::class, 'create']);
+Route::post('post', [PostController::class, 'store'])->name('post.store');
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+```
+
+6\. ローカルサーバーを立ち上げて確認する
+
+```
+php artisan serve
+```
+- http://localhost/post/create
+- 件名、本文に何か文字を入力して「送信する」ボタンをクリック
+- 入力フォームがリセットされる。
+
