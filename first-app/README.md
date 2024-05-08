@@ -307,12 +307,16 @@ sail artisan migrate
 'faker_locale' => 'ja_JP',
 ```
 
-1\. 
+## sec03 翻訳用のディレクトリを設置（laravel10より必要）
+1\. 翻訳用のディレクトリを設置（laravel10より必要）
 ```
+sail artisan lang:publish
 ```
 
-2\. 
+2\. laravel/beezeの日本語化パッケージを使用
 ```
+sail composer require askdkc/breezejp --dev
+sail artisan breezejp
 ```
 
 3\. 
